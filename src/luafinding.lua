@@ -32,11 +32,7 @@ local adjacentPositions = {
     Vector( 0, -1 ),
     Vector( -1, 0 ),
     Vector( 0, 1 ),
-    Vector( 1, 0 ),
-    Vector( -1, -1 ),
-    Vector( 1, -1 ),
-    Vector( -1, 1 ),
-    Vector( 1, 1 )
+    Vector( 1, 0 )
 }
 
 local function fetchOpenAdjacentNodes( pos, positionOpenCheck )
