@@ -1,8 +1,7 @@
-
 -- Positions must be a table (or metatable) where table.x and table.y are accessible.
 
-local Vector = require( "vector" )
-local Heap = require( "heap" )
+local Vector = require("vector")
+local Heap = require("heap")
 
 local Luafinding = {}
 Luafinding.__index = Luafinding
@@ -12,36 +11,37 @@ Luafinding.__index = Luafinding
 -- positionOpenCheck can be a function or a table.
 -- If it's a function it must have a return value of true or false depending on whether or not the position is open.
 -- If it's a table it should simply be a table of values such as "pos[x][y] = true".
-function Luafinding:Initialize( start, finish, positionOpenCheck )
-    local newPath = setmetatable( { Start = start, Finish = finish, PositionOpenCheck = positionOpenCheck }, Luafinding )
+function Luafinding:Initialize(start, finish, positionOpenCheck)
+    local newPath = setmetatable({ Start = start, Finish = finish, PositionOpenCheck = positionOpenCheck }, Luafinding)
     newPath:CalculatePath()
     return newPath
 end
 
-local function distance( start, finish )
+local function distance(start, finish)
     local dx = start.x - finish.x
     local dy = start.y - finish.y
     return dx * dx + dy * dy
 end
 
 local positionIsOpen
-local function positionIsOpenTable( pos, check ) return check[pos.x] and check[pos.x][pos.y] end
-local function positionIsOpenCustom( pos, check ) return check( pos ) end
+local function positionIsOpenTable(pos, check) return check[pos.x] and check[pos.x][pos.y] end
+
+local function positionIsOpenCustom(queryPos, pos, check) return check(queryPos, pos) end
 
 local adjacentPositions = {
-    Vector( 0, -1 ),
-    Vector( -1, 0 ),
-    Vector( 0, 1 ),
-    Vector( 1, 0 )
+    Vector(0, -1),
+    Vector(-1, 0),
+    Vector(0, 1),
+    Vector(1, 0),
 }
 
-local function fetchOpenAdjacentNodes( pos, positionOpenCheck )
+local function fetchOpenAdjacentNodes(pos, positionOpenCheck)
     local result = {}
 
     for i = 1, #adjacentPositions do
         local adjacentPos = pos + adjacentPositions[i]
-        if positionIsOpen( adjacentPos, positionOpenCheck ) then
-            table.insert( result, adjacentPos )
+        if positionIsOpen(pos, adjacentPos, positionOpenCheck) then
+            table.insert(result, adjacentPos)
         end
     end
 
@@ -53,19 +53,19 @@ end
 function Luafinding:CalculatePath()
     local start, finish, positionOpenCheck = self.Start, self.Finish, self.PositionOpenCheck
     if not positionOpenCheck then return end
-    positionIsOpen = type( positionOpenCheck ) == "table" and positionIsOpenTable or positionIsOpenCustom
-    if not positionIsOpen( finish, positionOpenCheck ) then return end
+    positionIsOpen = type(positionOpenCheck) == "table" and positionIsOpenTable or positionIsOpenCustom
+    if not positionIsOpen(finish, finish, positionOpenCheck) then return end
     local open, closed = Heap(), {}
 
     start.gScore = 0
-    start.hScore = distance( start, finish )
+    start.hScore = distance(start, finish)
     start.fScore = start.hScore
 
-    open.Compare = function( a, b )
+    open.Compare = function(a, b)
         return a.fScore < b.fScore
     end
 
-    open:Push( start )
+    open:Push(start)
 
     while not open:Empty() do
         local current = open:Pop()
@@ -75,10 +75,10 @@ function Luafinding:CalculatePath()
                 local path = {}
                 while true do
                     if current.previous then
-                        table.insert( path, 1, current )
+                        table.insert(path, 1, current)
                         current = current.previous
                     else
-                        table.insert( path, 1, start )
+                        table.insert(path, 1, start)
                         self.Path = path
                         return path
                     end
@@ -87,20 +87,20 @@ function Luafinding:CalculatePath()
 
             closed[currentId] = true
 
-            local adjacents = fetchOpenAdjacentNodes( current, positionOpenCheck )
+            local adjacents = fetchOpenAdjacentNodes(current, positionOpenCheck)
             for i = 1, #adjacents do
                 local adjacent = adjacents[i]
                 if not closed[adjacent:ID()] then
-                    local added_gScore = current.gScore + distance( current, adjacent )
+                    local added_gScore = current.gScore + distance(current, adjacent)
 
                     if not adjacent.gScore or added_gScore < adjacent.gScore then
                         adjacent.gScore = added_gScore
                         if not adjacent.hScore then
-                            adjacent.hScore = distance( adjacent, finish )
+                            adjacent.hScore = distance(adjacent, finish)
                         end
                         adjacent.fScore = added_gScore + adjacent.hScore
 
-                        open:Push( adjacent )
+                        open:Push(adjacent)
                         adjacent.previous = current
                     end
                 end
@@ -116,7 +116,7 @@ end
 function Luafinding:GetDistance()
     local path = self.Path
     if not path then return end
-    return distance( path[1], path[#path] )
+    return distance(path[1], path[#path])
 end
 
 function Luafinding:GetTiles()
@@ -130,8 +130,8 @@ function Luafinding:__tostring()
     local string = ""
 
     if path then
-        for k, v in ipairs( path ) do
-            local formatted = ( k .. ": " .. v )
+        for k, v in ipairs(path) do
+            local formatted = (k .. ": " .. v)
             string = k == 1 and formatted or string .. "\n" .. formatted
         end
     end
@@ -139,4 +139,4 @@ function Luafinding:__tostring()
     return string
 end
 
-return setmetatable( Luafinding, { __call = function( self, ... ) return self:Initialize( ... ) end } )
+return setmetatable(Luafinding, { __call = function(self, ...) return self:Initialize(...) end })
